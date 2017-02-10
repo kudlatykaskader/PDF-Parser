@@ -6,6 +6,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PDFParser
@@ -17,28 +18,11 @@ namespace PDFParser
 
         }
 
-        public uint addEntry(string entry)
-        {
-            string buffer = string.Empty;
-            char[] delimiterChars = { ' ', '.'};
-            string[] entryElements = entry.Split(delimiterChars);
-            if(!entryElements.Contains("Poz"))
-            {
-                //Entry invalid, Option "Poz" not found
-                return 1;
-            }
-            foreach (string element in entryElements)
-            {
-                //entryElements.Contains
-            }
-            return 0;
-        }
-
         public void TOC_test(string dirName)
         {
+            /*
             LogManager loger = new LogManager();
             loger.SetLogPath(dirName, "minor_major_TOC_Delimeters_search");
-
             string[] TOC_minorCategoryDelimeters = {
                                                     "1. Spółki komandytowo-akcyjne",
                                                     "2. Spółki z ograniczoną odpowiedzialnością",
@@ -77,8 +61,6 @@ namespace PDFParser
                     loger.write("Looking for: \'" + tocDelimeter+ "\'" );
                     for (int page = 1; page <= 15; page++)
                     {
-                        string currentText = PdfTextExtractor.GetTextFromPage(pdfReader, page, new SimpleTextExtractionStrategy());
-                        currentText = Encoding.UTF8.GetString(ASCIIEncoding.Convert(Encoding.Default, Encoding.UTF8, Encoding.Default.GetBytes(currentText)));
                         string[] lines = currentText.Split(lineDelimeter);
                         foreach (string s in lines)
                             if (s.Equals(tocDelimeter))
@@ -93,7 +75,10 @@ namespace PDFParser
                 }
                 pdfReader.Close();
             }
+            */
         }
+
+
 
         public int getWDRSIndexPage(string filePath, string filename)
         {
