@@ -12,19 +12,9 @@ namespace PDFParser
 {
     class TableOfContent
     {
-        private DataTable SpólkiKomandytowoAkcyjne;
-        private DataTable SpólkiZoo;
-        private DataTable SpólkiAkcyjne;
-
-        private uint FirstLine { get; set; }
-
-
         public TableOfContent()
         {
-            SpólkiKomandytowoAkcyjne = new DataTable();
-            SpólkiKomandytowoAkcyjne.Columns.Add("Pos", typeof(int));
-            SpólkiKomandytowoAkcyjne.Columns.Add("Content", typeof(string));
-            SpólkiKomandytowoAkcyjne.Columns.Add("Page", typeof(int));
+
         }
 
         public uint addEntry(string entry)

@@ -23,11 +23,11 @@ namespace PDFParser
 
         static void Main(string[] args)
         {
-            //Console.SetWindowSize(120, 40);
-            //Console.BufferHeight = Int16.MaxValue-1;
-            //Console.Out.WriteLine();
+            Console.SetWindowSize(120, 40);
+            Console.BufferHeight = Int16.MaxValue-1;
+            Console.Out.WriteLine();
 
-            //KRSIndex indexContent = new KRSIndex();
+            KRSIndex indexContent = new KRSIndex();
             //List<List<string>>
             //indexContent.ParseItem(indexContent.getKrsIndex(readPFDPages(pdfFilePath), (uint)KRSIndexPage)[9]);
 
