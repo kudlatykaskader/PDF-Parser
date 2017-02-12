@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PDFParser
@@ -22,55 +23,8 @@ namespace PDFParser
         DataTable indexDataTable = new DataTable();
         
 
-        public List<List<string>> getKrsIndex(string[] pdfPages, uint indexPage)
-        {
-//Line, word delimeters and other helpfull data
-            char[] lineDelimeter = { '\n' };
-            char[] wordDelimeter = { ' ', '.' };
-            char[] letters = { 'A', 'Ą', 'B', 'C', 'Ć', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'Ś', 'T', 'U', 'W', 'X', 'Y', 'Z', 'Ź', 'Ż', };
-            uint currentLine = 0;
-//Containers
-            List<List<string>> IndexItems = new List<List<string>>();
-            string[] pdfPageLines = new string[1000];
-//Logger
-            LogManager loger = new LogManager();
-            loger.SetLogPath(@"C:\Users\EMAZWOK\OneDrive\root\Projekty\PostVertising\Logi\", "minor_major_TOC_Delimeters_search");
-            loger.write("KRS Index starts at: " + indexPage);
-            //Parse begin           
-            for (uint page = indexPage + 1; page < pdfPages.GetLength(0); page++)
-            {
-                pdfPageLines = pdfPages[page].Split(lineDelimeter);
-                //Looking for page header
-                for (uint i = 0; i > 10; i++)
-                    if (pdfPageLines[i].Equals("INDEKS KRS"))
-                        for (uint j = i; j > 10; j++)
-                            if (pdfPageLines[j].Equals("INDEKS"))
-                                currentLine = j;
-                //If KRS INDEKS page header was not found on first page, return empty list;
-                if (currentLine == 0 && page == indexPage)
-                    return new List<List<string>> { };
-                List<string> krsIndeksEntry = new List<string>{ };
-                foreach (string line in pdfPageLines)
-                {
-                    string newline = line;
-                    if (((newline.IndexOfAny(letters) - 2) == newline.IndexOf('-')) && ((newline.IndexOfAny(letters) + 2) == newline.LastIndexOf('-')))
-                        continue;
-                    if (newline.StartsWith(" "))
-                        newline = newline.Remove(0, 1);
-                    krsIndeksEntry.Add(newline);
-                    for (int i = 0; i < krsIndeksEntry.Count; i++)
-                        if(krsIndeksEntry[i].EndsWith("-"))
-                            krsIndeksEntry[i] = krsIndeksEntry[i].Remove(krsIndeksEntry.LastIndexOf("-"), 1);
-                    if (newline.Contains("poz."))
-                    { 
-                        IndexItems.Add(new List<string>(krsIndeksEntry));
-                        krsIndeksEntry.Clear();                    
-                    }     
-                }
-            }
-            Console.Out.WriteLine("Got KRS Indeks Content!");
-            return IndexItems;
-        }
+
+       
 
 
         public DataTable ParseItem(List<string> IndexItem)
