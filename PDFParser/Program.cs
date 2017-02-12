@@ -25,37 +25,33 @@ namespace PDFParser
             Stopwatch stopWatch = new Stopwatch();
             TimeSpan ts = new TimeSpan();
             string elapsedTime = string.Empty;
+            
 
-           
+
             Console.SetWindowSize(200, 60);
-            Console.BufferHeight = 3000;
+            Console.BufferHeight = 20000;
             Console.Out.WriteLine();
             stopWatch.Start();
             Console.Write("dupa");
+            
             string[] pdfPages = readPFDPages(pdfFilePath);
-            for (int i = 340; i < 340 + 21; i++)
-                KRSIndexFixLines(PageToLines(pdfPages[i]));
+
+            int krsIndeksPage = getKrsIndexPage(pdfPages);
+
+            for (int i = krsIndeksPage -1; i < pdfPages.Length; i++)
+                getKrsIndex(KRSIndexFixLines(PageToLines(pdfPages[i])));
 
             //DataTable dt = getKrsIndex(PageToLines(pdfPages[340]));
-            /*
+            int k = 0; 
+            foreach (string page in pdfPages)
+            {
+                Console.WriteLine("\n********************Page {0}*********************", k);
+                ParseTOCPage(pdfPages[k]);
+                if (getKrsIndexPage(page) != 0)
+                    break;
+                k++;
+            }
             
-            Console.WriteLine("\n********************Page 1*********************");
-            ParseTOCPage(pdfPages[0]);
-            Console.WriteLine("\n********************Page 2*********************");
-            ParseTOCPage(pdfPages[1]);
-            Console.WriteLine("\n********************Page 3*********************");
-            ParseTOCPage(pdfPages[2]);
-            Console.WriteLine("\n********************Page 4*********************");
-            ParseTOCPage(pdfPages[3]);
-            Console.WriteLine("\n********************Page 5*********************");
-            ParseTOCPage(pdfPages[4]);
-            Console.WriteLine("\n********************Page 6*********************");
-            ParseTOCPage(pdfPages[5]);
-            Console.WriteLine("\n********************Page 7*********************");
-            ParseTOCPage(pdfPages[6]);
-            Console.WriteLine("\n********************Page 8*********************");
-            ParseTOCPage(pdfPages[7]);
-            */
             stopWatch.Stop();
 
             ts = stopWatch.Elapsed;
@@ -75,6 +71,9 @@ namespace PDFParser
                 currentText = Encoding.Default.GetString(Encoding.Default.GetBytes(currentText));
                 //Replace every occurence of 'MSIG x/x (x)
                 currentText = Regex.Replace(currentText, @"MSIG\s\d+\/\d{4}\s\(\d+\)", Environment.NewLine);
+                currentText = Regex.Replace(currentText, @"^Odbiorca\:(\s+)?\*(\s+)?ID\:(\s+)?\w+", string.Empty);
+                currentText = Regex.Replace(currentText, @"[-]\s?\d+\s?[-]", string.Empty);
+                currentText = Regex.Replace(currentText, @"[-]\s?\w\s?[-]", string.Empty);
                 //Replacy any line with format of " - x - "
                 currentText = Regex.Replace(currentText, @".+[-]\s\d+\s[-]", Environment.NewLine);
                 pdfPages[page-1] = currentText;
@@ -169,9 +168,12 @@ namespace PDFParser
             string out_5 = LinesToPage(out_3);
             Console.Out.WriteLine("\n\nResult: \n\n");
             foreach (DataRow row in out_4.Rows)
-                Console.Out.WriteLine("Year Position: {0}, Page: {1}, Header: {2}", Regex.Replace(row["YearPosition"].ToString(), @"\n|\r", string.Empty),
-                                                                                    Regex.Replace(row["Page"].ToString(), @"\n|\r", string.Empty),
-                                                                                    Regex.Replace(row["Header"].ToString(), @"\n|\r", string.Empty));
+            {
+                Console.WriteLine("**************************************");
+                Console.Out.WriteLine("-->Year Position: {0}\n-->Page: {1}\n-->Header: {2}", Regex.Replace(row["YearPosition"].ToString(), @"\n|\r", string.Empty),
+                                                                                        Regex.Replace(row["Page"].ToString(), @"\n|\r", string.Empty),
+                                                                                         Regex.Replace(row["Header"].ToString(), @"\n|\r", string.Empty));
+            }
             return out_4;
         }
 
@@ -180,60 +182,90 @@ namespace PDFParser
             List<string> out_page = new List<string>();
 
             foreach (string line in pdfPage)
-                if (!Regex.Match(line, @"MONITOR SĄDOWY I GOSPODARCZY|MSIG\s\d+\/\d+\s\(\d+\)|^INDEKS$|^INDEKS KRS$|\s?[-]\s?\w+\s?[-]\s?|\d{1,2}\s\w+\s\d{4}\sR\.", RegexOptions.IgnoreCase).Success)
+                if (!Regex.Match(line, @"MONITOR SĄDOWY I GOSPODARCZY|MSIG\s\d+\/\d+\s\(\d+\)|^INDEKS$|^INDEKS KRS$|\s?[–]\s?\w+\s?[–]\s?|\s?[–]\s?\d+\s?[–]\s?|\d{1,2}\s\w+\s\d{4}\sR\.", RegexOptions.IgnoreCase).Success)
                 {
                     out_page.Add(line);
-                    Console.WriteLine("Adding: {0}", line);
                 }
             return out_page;
         }
 
         static public List<string> KRSIndexFixLines(List<string> pdfPage)
         {
+            bool pageVerified = false;
+            foreach (string pline in pdfPage)
+                if (Regex.Match(pline, @"INDEKS KRS").Success)
+                    pageVerified = true;
+            if (!pageVerified)
+                return null;
             List<string> page = KRSIndexFilter(pdfPage);
             List<string> out_page = new List<string>();
-            string pos = @"poz\.\s\d+";
-            RegexOptions opt = RegexOptions.IgnoreCase;
-
-            for (int i = 0; i < page.Count; i++)
+            for(int i = 0; i < page.Count; i++)
             {
-                if (!Regex.Match(page[i], pos, opt).Success && Regex.Match(page[i + 1], pos, opt).Success)
+                
+                string line = string.Empty;
+                while(true)
                 {
-                    out_page.Add(page[i] + page[i + 1]);
-                    Console.WriteLine("Adding: {0}", page[i] + page[i + 1]);
+                    line += page[i];
                     i++;
-
+                    if ((i == page.Count || (Regex.Match(rms(line), @"poz\.\d+\.").Success && !Regex.Match(rms(page[i-1]) + rms(page[i]), @"poz\.\d+\.\[\w{2}\.").Success) ))
+                    {
+                        //Console.WriteLine("Output: {0}", line);
+                        out_page.Add(line);
+                        i--;
+                        break;
+                    }
                 }
-                else if (!Regex.Match(page[i], pos, opt).Success && Regex.Match(page[i + 2], pos, opt).Success)
-                {
-                    out_page.Add(page[i] + page[i + 1] + page[i + 2]);
-                    Console.WriteLine("Adding: {0}", page[i] + page[i + 1] + page[i + 2]);
-                    i++;
-                    i++;
-                }
-                else if (!Regex.Match(page[i], pos, opt).Success && Regex.Match(page[i + 3], pos, opt).Success)
-                {
-                    out_page.Add(page[i] + page[i + 1] + page[i + 2] + page[i + 3]);
-                    Console.WriteLine("Adding: {0}", page[i] + page[i + 1] + page[i + 2] + page[i + 3]);
-                    i++;
-                    i++;
-                    i++;
-                }
-                else
-                    Console.WriteLine("Omitting line: {0}", page[i]);
             }
+
             return out_page;
         }
 
-        static public  DataTable getKrsIndex(List<string> pdfPage)
+        static public  DataTable getKrsIndex(List<string> indexItems)
         {
-            Console.WriteLine("\nKRS Indeks parser Start");
+            Dictionary<string, string> cities = new Dictionary<string, string>();
 
+            if (indexItems == null)
+                return null;
+            Console.WriteLine("\nKRS Indeks parser Start");
+            foreach (string item in indexItems)
+            {
+                string companyName = Regex.Replace(item, @"\[.+", string.Empty);
+                string city = Regex.Match(item, @"\[.+\]").ToString();
+                city = city[1].ToString() + city[1].ToString();
+                string KRSId = Regex.Match(item, @"(\/\d+){3}").ToString();
+                uint page = Convert.ToUInt32(Regex.Replace(Regex.Match(rms(item), @"[-]s\.\d+").ToString(), @"[-]s\.", string.Empty).ToString());
+                uint position = Convert.ToUInt32(Regex.Replace(Regex.Match(rms(item), @"poz.\d+").ToString(), @"poz\.", string.Empty).ToString());
+                Console.WriteLine("-->Company Name: {0}, \n-->Registration City: {1}, \n-->KRS ID: {2}, \n-->Page: {3}, \n-->Position: {4}", companyName, city, KRSId, page, position);
+                Console.WriteLine("**************************************");
+            }
 
 
 
             return null;
         }
+
+        static string rms(string input)
+        {
+            return Regex.Replace(input, @"\s+", string.Empty);
+        }
+
+        static int getKrsIndexPage(string[] pdfPages)
+        {
+            int result = 0;
+            foreach (string page in pdfPages)
+                if ((result = getKrsIndexPage(page)) != 0)
+                    return result;
+            return 0;
+        }
+        static int getKrsIndexPage(string page)
+        {
+            foreach (string line in PageToLines(page))
+                if (Regex.Match(line, @"INDEKS KRS(\s+)?(\.\s)+(\s+)?\d+").Success)
+                    return Convert.ToInt32(Regex.Replace(line, @"INDEKS KRS\s+(\.\s)+", string.Empty).ToString());
+            return 0;
+        }
+
+        
     }   
 }
 
