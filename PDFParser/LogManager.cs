@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PDFParser
@@ -15,7 +16,7 @@ namespace PDFParser
             file = new System.IO.StreamWriter(path +"\\" + 
                                               filename + 
                                               "_log_" + 
-                                              DateTime.Now.ToString().Replace('/', '_').Replace(':', '_') + ".txt"
+                                              Regex.Replace(DateTime.Now.ToString(), @"\/|\:", "_") + ".txt"
                                               );
             if (file != null)
                 return true;
